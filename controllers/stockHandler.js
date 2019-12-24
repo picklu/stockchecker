@@ -1,5 +1,3 @@
-var StockHandler = {}
-
-module.exports = function StockHandler() {
+module.exports = function (app) {
 
 }
