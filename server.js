@@ -14,6 +14,13 @@ var app = express();
 
 app.use(helmet.hidePoweredBy({ setTo: 'PHP 4.2.0' }));
 app.use(helmet.noCache());
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    defaultSrc: ["'self'"],
+    styleSrc: ["'self'"],
+    scriptSrc: ["'self'"]
+  }
+}))
 
 app.use('/public', express.static(process.cwd() + '/public'));
 
