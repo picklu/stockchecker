@@ -7,7 +7,7 @@ hr {
 }
 
 hr:last-of-type {
-    margin-top: 20px;
+    margin-top: 50px;
 }
 
 form input[type="text"] {
