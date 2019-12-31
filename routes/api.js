@@ -10,7 +10,7 @@
 
 var expect = require('chai').expect;
 var MongoClient = require('mongodb');
-var request = require('request');
+var axios = require('axios');
 
 var CONNECTION_STRING = process.env.DB_LOCAL || process.env.DB;
 const DB_NAME = process.env.DB_NAME;
@@ -137,33 +137,48 @@ async function deleteData(project, id) {
 
 const API_URL = "https://repeated-alpaca.glitch.me/v1/stock/{stock}/quote";
 
+// source: https://stackoverflow.com/questions/52669596/promise-all-with-axios
+function fetchData(url) {
+  return axios.get(url)
+    .then(function (response) {
+      const data = response.data;
+      return {
+        stock: data.symbol,
+        price: data.latestPrice
+      };
+    })
+    .catch(function (error) {
+      return { error: error };
+    });
+}
+
+async function fetchAllData(URLs) {
+  let networkRequestPromises = URLs.map(fetchData);
+  return await axios
+    .all(networkRequestPromises)
+    .then(response => response)
+    .catch(error => ({ error }))
+}
 
 
 module.exports = function (app) {
-
   app.route('/api/stock-prices')
-    .get(function (req, res) {
+    .get(async function (req, res) {
       const remoteIp = [].concat(req.ip || req.ips)[0];
-      const stock = [].concat(req.query.stock);
+      const stocks = [].concat(req.query.stock || []);
       const like = req.query.like;
-      const url = API_URL.replace(/{stock}/, stock[0]);
-
-      request(url, function (error, response, body) {
-        if (error) {
-          console.log('error:', error);
-        }
-
-        const status = response && response.statusCode;
-        if (status === 200) {
-          body = JSON.parse(body);
-          console.log('== bodytype==>', typeof(body));
-          console.log('== symbol  ==>', body.symbol);
-          console.log('== company ==>', body.companyName);
-          console.log('== price   ==>', body.latestPrice);
-          res.json({})
-        }
-        
-      });
+      if (stocks.length === 1) {
+        const url = API_URL.replace(/{stock}/, stocks[0]);
+        const data = await fetchData(url);
+        return res.json({ stockData: data });
+      }
+      else if (stocks.length === 2) {
+        const urls = stocks.map(stock => API_URL.replace(/{stock}/, stock));
+        const data = await fetchAllData(urls)
+        return res.json({ stockData: data });
+      }
+      else {
+        res.send('Empty stock!');
+      }
     });
-
 };
