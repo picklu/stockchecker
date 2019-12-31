@@ -10,6 +10,7 @@
 
 var expect = require('chai').expect;
 var MongoClient = require('mongodb');
+var request = require('request');
 
 var CONNECTION_STRING = process.env.DB_LOCAL || process.env.DB;
 const DB_NAME = process.env.DB_NAME;
@@ -134,12 +135,35 @@ async function deleteData(project, id) {
 }
 // end of mongodb functions
 
+const API_URL = "https://repeated-alpaca.glitch.me/v1/stock/{stock}/quote";
+
+
+
 module.exports = function (app) {
 
   app.route('/api/stock-prices')
     .get(function (req, res) {
-      console.log(req.query);
-      res.json(req.query);
+      const remoteIp = [].concat(req.ip || req.ips)[0];
+      const stock = [].concat(req.query.stock);
+      const like = req.query.like;
+      const url = API_URL.replace(/{stock}/, stock[0]);
+
+      request(url, function (error, response, body) {
+        if (error) {
+          console.log('error:', error);
+        }
+
+        const status = response && response.statusCode;
+        if (status === 200) {
+          body = JSON.parse(body);
+          console.log('== bodytype==>', typeof(body));
+          console.log('== symbol  ==>', body.symbol);
+          console.log('== company ==>', body.companyName);
+          console.log('== price   ==>', body.latestPrice);
+          res.json({})
+        }
+        
+      });
     });
 
 };

@@ -12,6 +12,8 @@ var runner = require('./test-runner');
 
 var app = express();
 
+app.set('trust proxy', true);
+
 app.use(helmet.hidePoweredBy({ setTo: 'PHP 4.2.0' }));
 app.use(helmet.noCache());
 app.use(helmet.contentSecurityPolicy({
