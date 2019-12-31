@@ -20,7 +20,7 @@ suite('Functional Tests', function () {
     test('1 stock', function (done) {
       chai.request(server)
         .get('/api/stock-prices')
-        .query({ stock: 'goog' })
+        .query({ stock: 'goog', like: false })
         .end(function (err, res) {
 
           //complete this one too

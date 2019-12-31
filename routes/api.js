@@ -14,6 +14,7 @@ var axios = require('axios');
 
 var CONNECTION_STRING = process.env.DB_LOCAL || process.env.DB;
 const DB_NAME = process.env.DB_NAME;
+const COLLECTION = 'stockeeper';
 
 // aync:await in mongodb
 var client;
@@ -28,12 +29,6 @@ async function closeDBConnection() {
 
 // connect to the database
 async function connectDB() {
-  if (DB_TYPE === 'mongodb-memory-server') {
-    if (!memoryServer) {
-      memoryServer = new MongoMemoryServer();
-      CONNECTION_STRING = await memoryServer.getConnectionString();
-    }
-  }
   let result;
   if (!client) {
     try {
@@ -50,38 +45,21 @@ async function connectDB() {
   return { error: 'Previous connection was not closed!' };
 }
 
-// insert data to the database
-async function insertData(project, data) {
+// insert/update issue in the database
+async function updateData(stock, ip, like) {
+  const query = { stock };
+  const update = like
+    ? { $set: { stock: stock }, $addToSet: { ips: ip } }
+    : { $set: { stock: stock } };
   const dbConn = await connectDB();
   if (dbConn.error) {
     return { error: dbConn.error };
   }
   const db = dbConn.db;
-  const collection = db.collection(project);
+  const collection = db.collection(COLLECTION);
   let result;
   try {
-    result = await collection.insertOne(data);
-  }
-  catch (error) {
-    result = { error: error };
-  }
-  finally {
-    await closeDBConnection();
-    return result;
-  }
-}
-
-// update issue in the database
-async function updateData(project, id, data) {
-  const dbConn = await connectDB();
-  if (dbConn.error) {
-    return { error: dbConn.error };
-  }
-  const db = dbConn.db;
-  const collection = db.collection(project);
-  let result;
-  try {
-    result = await collection.updateOne({ _id: id }, { $set: data });
+    result = await collection.findOneAndUpdate(query, update, { upsert: true });
   }
   catch (error) {
     result = { error: error };
@@ -93,37 +71,16 @@ async function updateData(project, id, data) {
 }
 
 // get issue from the database
-async function getData(project, data) {
+async function getData(stock) {
   const dbConn = await connectDB();
   if (dbConn.error) {
     return { error: dbConn.error };
   }
   const db = dbConn.db;
-  const collection = db.collection(project);
+  const collection = db.collection(COLLECTION);
   let result;
   try {
-    result = await collection.find(data).toArray();
-  }
-  catch (error) {
-    result = { error: error };
-  }
-  finally {
-    await closeDBConnection();
-    return result;
-  }
-}
-
-// delete issue in the database
-async function deleteData(project, id) {
-  const dbConn = await connectDB();
-  if (dbConn.error) {
-    return { error: dbConn.error };
-  }
-  const db = dbConn.db;
-  const collection = db.collection(project);
-  let result;
-  try {
-    result = await collection.findOneAndDelete({ _id: id });
+    result = await collection.findOne({ stock });
   }
   catch (error) {
     result = { error: error };
@@ -166,15 +123,34 @@ module.exports = function (app) {
     .get(async function (req, res) {
       const remoteIp = [].concat(req.ip || req.ips)[0];
       const stocks = [].concat(req.query.stock || []);
-      const like = req.query.like;
+      const like = req.query.like === undefined ? false : req.query.like;
       if (stocks.length === 1) {
         const url = API_URL.replace(/{stock}/, stocks[0]);
         const data = await fetchData(url);
-        return res.json({ stockData: data });
+        if (data.stock) {
+          const result = await updateData(data.stock, 'remoteIp76', like);
+          if (result && result.error) {
+            return res.json({ error: result.error });
+          }
+          else if (result) {
+            const likes = result.value && result.value.ips ? result.value.ips.length : 0;
+            console.log("== likes ==>", likes)
+            console.log("== like ==>", like);
+            console.log("== like ==>", typeof like);
+            data.likes = likes + Number(like);
+            return res.json({ stockData: data });
+          }
+          else {
+            return res.json({ error: 'something went wrong!' });
+          }
+        }
+        else {
+          return res.json()
+        }
       }
       else if (stocks.length === 2) {
         const urls = stocks.map(stock => API_URL.replace(/{stock}/, stock));
-        const data = await fetchAllData(urls)
+        const data = await fetchAllData(urls);
         return res.json({ stockData: data });
       }
       else {

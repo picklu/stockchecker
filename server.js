@@ -1,6 +1,7 @@
 'use strict';
 
 var express = require('express');
+var boolParser = require('express-query-boolean');
 var bodyParser = require('body-parser');
 var expect = require('chai').expect;
 var cors = require('cors');
@@ -30,6 +31,7 @@ app.use(cors({ origin: '*' })); //For FCC testing purposes only
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(boolParser());
 
 //Index page (static HTML)
 app.route('/')
