@@ -134,9 +134,6 @@ module.exports = function (app) {
           }
           else if (result) {
             const likes = result.value && result.value.ips ? result.value.ips.length : 0;
-            console.log("== likes ==>", likes)
-            console.log("== like ==>", like);
-            console.log("== like ==>", typeof like);
             data.likes = likes + Number(like);
             return res.json({ stockData: data });
           }
