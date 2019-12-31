@@ -128,11 +128,8 @@ module.exports = function (app) {
         const url = API_URL.replace(/{stock}/, stocks[0]);
         const data = await fetchData(url);
         if (data.stock) {
-          const result = await updateData(data.stock, 'remoteIp76', like);
-          if (result && result.error) {
-            return res.json({ error: result.error });
-          }
-          else if (result) {
+          const result = await updateData(data.stock, remoteIp, like);
+          if (result) {
             const likes = result.value && result.value.ips ? result.value.ips.length : 0;
             data.likes = likes + Number(like);
             return res.json({ stockData: data });
@@ -142,13 +139,37 @@ module.exports = function (app) {
           }
         }
         else {
-          return res.json()
+          return res.json({ error: 'invalid stock!' });
         }
       }
       else if (stocks.length === 2) {
         const urls = stocks.map(stock => API_URL.replace(/{stock}/, stock));
         const data = await fetchAllData(urls);
-        return res.json({ stockData: data });
+        const [dataFirst, dataSecond] = data;
+
+        // for first stock
+        if (dataFirst.stock) {
+          const resultOne = await updateData(dataFirst.stock, remoteIp, like);
+          if (resultOne) {
+            const likes = resultOne.value && resultOne.value.ips ? resultOne.value.ips.length : 0;
+            dataFirst.rel_likes = likes + Number(like);
+          }
+        }
+
+        // for second stock
+        if (dataSecond.stock) {
+          const resultTwo = await updateData(dataSecond.stock, remoteIp, like);
+          if (resultTwo) {
+            const likes = resultTwo.value && resultTwo.value.ips ? resultTwo.value.ips.length : 0;
+            dataSecond.rel_likes = likes + Number(like);
+          }
+        }
+
+        dataFirst.rel_likes = dataFirst.rel_likes - dataSecond.rel_likes;
+        dataSecond.rel_likes = dataSecond.rel_likes - dataFirst.rel_likes;
+
+        res.json({ stockData: [dataFirst, dataSecond] });
+
       }
       else {
         res.send('Empty stock!');
