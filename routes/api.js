@@ -155,8 +155,8 @@ module.exports = function (app) {
         if (dataFirst.stock) {
           const resultOne = await updateData(dataFirst.stock, remoteIp, like);
           if (resultOne) {
-            const likes = resultOne.value && resultOne.value.ips ? resultOne.value.ips.length : 0;
-            dataFirst.rel_likes = likes;
+            const likesOne = resultOne.value && resultOne.value.ips ? resultOne.value.ips.length : 0;
+            dataFirst.rel_likes = likesOne;
           }
         }
 
@@ -164,13 +164,14 @@ module.exports = function (app) {
         if (dataSecond.stock) {
           const resultTwo = await updateData(dataSecond.stock, remoteIp, like);
           if (resultTwo) {
-            const likes = resultTwo.value && resultTwo.value.ips ? resultTwo.value.ips.length : 0;
-            dataSecond.rel_likes = likes;
+            const likesTwo = resultTwo.value && resultTwo.value.ips ? resultTwo.value.ips.length : 0;
+            dataSecond.rel_likes = likesTwo;
           }
         }
 
+        const tempLikes = dataFirst.rel_likes;
         dataFirst.rel_likes = dataFirst.rel_likes - dataSecond.rel_likes;
-        dataSecond.rel_likes = dataSecond.rel_likes - dataFirst.rel_likes;
+        dataSecond.rel_likes = dataSecond.rel_likes - tempLikes;
 
         res.json({ stockData: [dataFirst, dataSecond] });
 
