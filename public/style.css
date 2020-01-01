@@ -11,6 +11,8 @@ hr:last-of-type {
 }
 
 form input[type="text"] {
+    background-color: #e2e0e0;
+    padding: 2px;
     width: 100px;
 }
 

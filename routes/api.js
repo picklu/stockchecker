@@ -59,7 +59,11 @@ async function updateData(stock, ip, like) {
   const collection = db.collection(COLLECTION);
   let result;
   try {
-    result = await collection.findOneAndUpdate(query, update, { upsert: true, returnOriginal: false });
+    result = await collection.findOneAndUpdate(
+      query, 
+      update, 
+      { upsert: true, returnOriginal: false }
+    );
   }
   catch (error) {
     result = { error: error };
