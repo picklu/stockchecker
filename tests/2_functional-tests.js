@@ -20,12 +20,17 @@ suite('Functional Tests', function () {
     test('1 stock', function (done) {
       chai.request(server)
         .get('/api/stock-prices')
-        .query({ stock: 'goog', like: false })
-        .end(function (err, res) {
-
+        .send({ stock: 'goog' })
+        .then(function (res) {
+          assert.equal(res.status, 200);
+          console.log(res)
+          // assert.property(res.body, 'stockData');
           //complete this one too
 
           done();
+        })
+        .catch(function (error) {
+          console.log(error);
         });
     });
 
