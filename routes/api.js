@@ -59,7 +59,7 @@ async function updateData(stock, ip, like) {
   const collection = db.collection(COLLECTION);
   let result;
   try {
-    result = await collection.findOneAndUpdate(query, update, { upsert: true });
+    result = await collection.findOneAndUpdate(query, update, { upsert: true, returnOriginal: false });
   }
   catch (error) {
     result = { error: error };
@@ -131,7 +131,7 @@ module.exports = function (app) {
           const result = await updateData(data.stock, remoteIp, like);
           if (result) {
             const likes = result.value && result.value.ips ? result.value.ips.length : 0;
-            data.likes = likes + Number(like);
+            data.likes = likes;
             return res.json({ stockData: data });
           }
           else {
@@ -152,7 +152,7 @@ module.exports = function (app) {
           const resultOne = await updateData(dataFirst.stock, remoteIp, like);
           if (resultOne) {
             const likes = resultOne.value && resultOne.value.ips ? resultOne.value.ips.length : 0;
-            dataFirst.rel_likes = likes + Number(like);
+            dataFirst.rel_likes = likes;
           }
         }
 
@@ -161,7 +161,7 @@ module.exports = function (app) {
           const resultTwo = await updateData(dataSecond.stock, remoteIp, like);
           if (resultTwo) {
             const likes = resultTwo.value && resultTwo.value.ips ? resultTwo.value.ips.length : 0;
-            dataSecond.rel_likes = likes + Number(like);
+            dataSecond.rel_likes = likes;
           }
         }
 
